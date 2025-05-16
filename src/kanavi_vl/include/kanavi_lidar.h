@@ -47,6 +47,7 @@ typedef struct kanavi_datagram{
 	std::vector< std::vector<float> > len_buf;
 	// raw data size
 	size_t input_packet_size;
+<<<<<<< HEAD
 	kanavi_datagram() : model(-1), v_fov(0), v_resolution(0), h_fov(0), h_resolution(0),
 		checked_end(false), input_packet_size(0){
 	}
@@ -89,6 +90,42 @@ typedef struct kanavi_datagram{
 		} catch (const std::exception& e) {
 			printf("[LiDAR] Error in kanaviDatagram constructor: %s\n", e.what());
 			throw;
+=======
+
+	kanavi_datagram(){
+	}
+	kanavi_datagram(int model_){
+		model = model_;
+		switch(model)
+		{
+		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R2:
+			v_fov = KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_FoV;
+			v_resolution = KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_RESOLUTION;
+			h_fov = KANAVI::COMMON::SPECIFICATION::R2::HORIZONTAL_FoV;
+			h_resolution = KANAVI::COMMON::SPECIFICATION::R2::HORIZONTAL_RESOLUTION;
+			input_packet_size = KANAVI::COMMON::SPECIFICATION::R2::RAW_TOTAL_SIZE;
+			raw_buf.resize(KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_CHANNEL);
+			len_buf.resize(KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_CHANNEL);
+			break;
+		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R4:
+			v_fov = KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_FoV;
+			v_resolution = KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_RESOLUTION;
+			h_fov = KANAVI::COMMON::SPECIFICATION::R4::HORIZONTAL_FoV;
+			h_resolution = KANAVI::COMMON::SPECIFICATION::R4::HORIZONTAL_RESOLUTION;
+			input_packet_size = KANAVI::COMMON::SPECIFICATION::R4::RAW_TOTAL_SIZE;
+			raw_buf.resize(KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_CHANNEL);
+			len_buf.resize(KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_CHANNEL);
+			break;
+		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R270:
+			v_fov = KANAVI::COMMON::SPECIFICATION::R270::VERTICAL_FoV;
+			v_resolution = KANAVI::COMMON::SPECIFICATION::R270::VERTICAL_RESOLUTION;
+			h_fov = KANAVI::COMMON::SPECIFICATION::R270::HORIZONTAL_FoV;
+			h_resolution = KANAVI::COMMON::SPECIFICATION::R270::HORIZONTAL_RESOLUTION;
+			input_packet_size = KANAVI::COMMON::SPECIFICATION::R270::RAW_TOTAL_SIZE;
+			raw_buf.resize(KANAVI::COMMON::SPECIFICATION::R270::VERTICAL_CHANNEL);
+			len_buf.resize(KANAVI::COMMON::SPECIFICATION::R270::VERTICAL_CHANNEL);
+			break;
+>>>>>>> a5b66cff43279b37025a24310b4ee71a65cbfcf2
 		}
 	}
 

@@ -21,7 +21,7 @@ namespace KANAVI
 		const std::string PARAMETER_PORT	= "-p";
 		const std::string PARAMETER_Multicast = "-m";
 		const std::string PARAMETER_Help	= "-h";
-	}
+	};
 
 	namespace COMMON
 	{
@@ -64,7 +64,7 @@ namespace KANAVI
 				const size_t	RAW_TOTAL_SIZE = 2169;
 				const float		BASE_ZERO_ANGLE			= -30;
 			}
-		}
+		};
 
 		namespace PROTOCOL_VALUE
 		{

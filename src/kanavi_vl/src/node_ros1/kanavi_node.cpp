@@ -56,27 +56,20 @@ kanavi_node::kanavi_node(const std::string &node_, int &argc_, char **argv_)
 		{
 			model_ = KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R270;
 			rotate_angle = KANAVI::COMMON::SPECIFICATION::R270::BASE_ZERO_ANGLE;
-			// g_pointcloud->resize(KANAVI::COMMON::SPECIFICATION::R270::VERTICAL_CHANNEL 
-			// 		* KANAVI::COMMON::SPECIFICATION::R270::HORIZONTAL_DATA_CNT);
 		}
 		else if (!strcmp("r4", node_.c_str()))
 		{
 			model_ = KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R4;
 			rotate_angle = KANAVI::COMMON::SPECIFICATION::R4::BASE_ZERO_ANGLE;
-			// g_pointcloud->resize(KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_CHANNEL 
-			// 		* KANAVI::COMMON::SPECIFICATION::R4::HORIZONTAL_DATA_CNT);
 		}
 		else if (!strcmp("r2", node_.c_str()))
 		{
 			model_ = KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R2;
 			rotate_angle = KANAVI::COMMON::SPECIFICATION::R2::BASE_ZERO_ANGLE;
-			// g_pointcloud->resize(KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_CHANNEL 
-			// 		* KANAVI::COMMON::SPECIFICATION::R2::HORIZONTAL_DATA_CNT);
 		}
 
 		if (model_ < 0)
 		{
-			g_pointcloud->clear();
 			return;
 		}
 
@@ -91,7 +84,6 @@ kanavi_node::kanavi_node(const std::string &node_, int &argc_, char **argv_)
 
 		// init. point cloud
 		g_pointcloud.reset(new PointCloudT);
-
 	}
 }
 
@@ -145,7 +137,9 @@ void kanavi_node::run()
 	ros::Rate rate(30);
 	// SECTION - Init LiDAR
 	int udp_return = m_udp->connect();
-	if(udp_return == -1) {	std::cerr << "UDP connection is fail" << std::endl;	}
+	if(udp_return == -1) {
+		std::cerr << "UDP connection is fail" << std::endl;
+	}
 
 	timer_.start();
 	//! SECTION
@@ -158,14 +152,12 @@ void kanavi_node::run()
 
 		if(!buf_.empty())
 		{
-			// kanavi_->process(buf_);
 			kanavi_->process(buf_);
 		}
 
 		// get Point Cloud from Lidar processor
 		if (kanavi_->checkedProcessEnd())
 		{
-
 			// datagram Length -> pointcloud
 			length2PointCloud(kanavi_->getDatagram());
 
@@ -188,16 +180,8 @@ void kanavi_node::run()
 
 void kanavi_node::length2PointCloud(kanaviDatagram datagram)
 {
-	try {
-		// Clear existing point cloud
-		g_pointcloud->clear();
-		g_pointcloud->reserve(datagram.len_buf.size() * datagram.len_buf[0].size());
-
-		// generate Point Cloud
-		generatePointCloud(datagram, *g_pointcloud);
-	} catch (const std::exception& e) {
-		printf("[NODE] Error in length2PointCloud: %s\n", e.what());
-	}
+	// generate Point Cloud
+	generatePointCloud(datagram, *g_pointcloud);
 }
 
 void kanavi_node::calculateAngular(int model)
@@ -241,85 +225,53 @@ void kanavi_node::calculateAngular(int model)
 
 void kanavi_node::generatePointCloud(const kanaviDatagram &datagram, PointCloudT &cloud_)
 {
-	try {
-		switch (datagram.model)
+	switch (datagram.model)
+	{
+	case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R2:
+		for (int ch = 0; ch < KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_CHANNEL; ch++)
 		{
-		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R2:
-			for (int ch = 0; ch < KANAVI::COMMON::SPECIFICATION::R2::VERTICAL_CHANNEL; ch++)
+			for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R2::HORIZONTAL_DATA_CNT; i++)
 			{
-				if (ch >= datagram.len_buf.size() || datagram.len_buf[ch].empty()) {
-					printf("[NODE] Invalid channel data for R2: channel %d\n", ch);
-					continue;
-				}
-				for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R2::HORIZONTAL_DATA_CNT; i++)
-				{
-					if (i >= datagram.len_buf[ch].size()) {
-						printf("[NODE] Invalid data index for R2: channel %d, index %d\n", ch, i);
-						continue;
-					}
-					cloud_.push_back(length2point(datagram.len_buf[ch][i], v_sin[ch], v_cos[ch], h_sin[i], h_cos[i]));
-				}
+				cloud_.push_back(length2point(datagram.len_buf[ch][i], v_sin[ch], v_cos[ch], h_sin[i], h_cos[i]));
 			}
-			break;
-		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R4:
-			for (int ch = 0; ch < KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_CHANNEL; ch++)
-			{
-				if (ch >= datagram.len_buf.size() || datagram.len_buf[ch].empty()) {
-					printf("[NODE] Invalid channel data for R4: channel %d\n", ch);
-					continue;
-				}
-				for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R4::HORIZONTAL_DATA_CNT; i++)
-				{
-					if (i >= datagram.len_buf[ch].size()) {
-						printf("[NODE] Invalid data index for R4: channel %d, index %d\n", ch, i);
-						continue;
-					}
-					cloud_.push_back(length2point(datagram.len_buf[ch][i], v_sin[ch], v_cos[ch], h_sin[i], h_cos[i]));
-				}
-			}
-			break;
-		case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R270:
-			if (datagram.len_buf.empty() || datagram.len_buf[0].empty()) {
-				printf("[NODE] Invalid data for R270\n");
-				return;
-			}
-			for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R270::HORIZONTAL_DATA_CNT; i++)
-			{
-				if (i >= datagram.len_buf[0].size()) {
-					printf("[NODE] Invalid data index for R270: index %d\n", i);
-					continue;
-				}
-				cloud_.push_back(length2point(datagram.len_buf[0][i], 0, 1, h_sin[i], h_cos[i]));
-			}
-			break;
-		default:
-			printf("[NODE] Unknown model type: %d\n", datagram.model);
-			return;
 		}
-	} catch (const std::exception& e) {
-		printf("[NODE] Error in generatePointCloud: %s\n", e.what());
+		break;
+	case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R4:
+		for (int ch = 0; ch < KANAVI::COMMON::SPECIFICATION::R4::VERTICAL_CHANNEL; ch++)
+		{
+			for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R4::HORIZONTAL_DATA_CNT; i++)
+			{
+				cloud_.push_back(length2point(datagram.len_buf[ch][i], v_sin[ch], v_cos[ch], h_sin[i], h_cos[i]));
+			}
+		}
+		break;
+	case KANAVI::COMMON::PROTOCOL_VALUE::MODEL::R270:
+		for (int i = 0; i < KANAVI::COMMON::SPECIFICATION::R270::HORIZONTAL_DATA_CNT; i++)
+		{
+			cloud_.push_back(length2point(datagram.len_buf[0][i], 0, 1, h_sin[i], h_cos[i]));
+		}
+		break;
+	default:
+		printf("[NODE] Unknown model type: %d\n", datagram.model);
+		return;
 	}
 }
 
 PointT kanavi_node::length2point(float len, float v_sin, float v_cos, float h_sin, float h_cos)
 {
-	try {
-		pcl::PointXYZRGB p_;
-		p_.x = len * v_cos * h_cos;
-		p_.y = len * v_cos * h_sin;
-		p_.z = len * v_sin;
+	pcl::PointXYZRGB p_;
 
-		float r, g, b;
-		HSV2RGB(&r, &g, &b, len * 20, 1.0, 1.0); // convert hsv to rgb
-		p_.r = static_cast<uint8_t>(r * 255);
-		p_.g = static_cast<uint8_t>(g * 255);
-		p_.b = static_cast<uint8_t>(b * 255);
+	p_.x = len * v_cos * h_cos;
+	p_.y = len * v_cos * h_sin;
+	p_.z = len * v_sin;
 
-		return p_;
-	} catch (const std::exception& e) {
-		printf("[NODE] Error in length2point: %s\n", e.what());
-		return pcl::PointXYZRGB();
-	}
+	float r, g, b;
+	HSV2RGB(&r, &g, &b, len * 20, 1.0, 1.0); // convert hsv to rgb
+	p_.r = r * 255;
+	p_.g = g * 255;
+	p_.b = b * 255;
+
+	return p_;
 }
 
 void kanavi_node::HSV2RGB(float *fR, float *fG, float *fB, float fH, float fS, float fV)
@@ -327,7 +279,7 @@ void kanavi_node::HSV2RGB(float *fR, float *fG, float *fB, float fH, float fS, f
 	float fC = fV * fS;
 	float fHPrime = fmod(fH / 60.0, 6);
 	float fX = fC * (1 - fabs(fmod(fHPrime, 2) - 1));
-	// float fM = fV - fC; // sykim
+	float fM = fV - fC;
 
 	if (0 <= fHPrime && fHPrime < 1)
 	{
@@ -373,7 +325,7 @@ void kanavi_node::HSV2RGB(float *fR, float *fG, float *fB, float fH, float fS, f
 	}
 }
 
-sensor_msgs::PointCloud2 kanavi_node::cloud_to_cloud_msg([[maybe_unused]]int ww, [[maybe_unused]]int hh, const pcl::PointCloud<pcl::PointXYZRGB> &cloud, [[maybe_unused]]int timestamp, const std::string &frame)
+sensor_msgs::PointCloud2 kanavi_node::cloud_to_cloud_msg(int ww, int hh, const pcl::PointCloud<pcl::PointXYZRGB> &cloud, int timestamp, const std::string &frame)
 {
 	sensor_msgs::PointCloud2 msg{};
 	pcl::toROSMsg(cloud, msg);
