@@ -23,4 +23,4 @@ devel/
 
 # System files
 .DS_Store
-Thumbs.db 
+Thumbs.db src/CMakeLists.txt
