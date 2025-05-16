@@ -1,0 +1,26 @@
+# ROS build files
+build/
+devel/
+.catkin_workspace
+
+# IDE files
+.vscode/
+.idea/
+
+# Compiled files
+*.o
+*.so
+*.a
+*.pyc
+
+# Log files
+*.log
+
+# Temporary files
+*~
+.*.swp
+.*.swo
+
+# System files
+.DS_Store
+Thumbs.db 
